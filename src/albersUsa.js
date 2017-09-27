@@ -29,6 +29,7 @@ export default function() {
       lower48 = albers(), lower48Point,
       alaska = conicEqualArea().rotate([154, 0]).center([-2, 58.5]).parallels([55, 65]), alaskaPoint, // EPSG:3338
       hawaii = conicEqualArea().rotate([157, 0]).center([-3, 19.9]).parallels([8, 18]), hawaiiPoint, // ESRI:102007
+      puertoRico = conicEqualArea().rotate([66, 0]).center([0, 18]).parallels([8, 18]), puertoRicoPoint, // XXX
       point, pointStream = {point: function(x, y) { point = [x, y]; }};
 
   function albersUsa(coordinates) {
@@ -36,7 +37,8 @@ export default function() {
     return point = null,
         (lower48Point.point(x, y), point)
         || (alaskaPoint.point(x, y), point)
-        || (hawaiiPoint.point(x, y), point);
+        || (hawaiiPoint.point(x, y), point)
+        || (puertoRicoPoint.point(x, y), point);
   }
 
   albersUsa.invert = function(coordinates) {
@@ -46,22 +48,23 @@ export default function() {
         y = (coordinates[1] - t[1]) / k;
     return (y >= 0.120 && y < 0.234 && x >= -0.425 && x < -0.214 ? alaska
         : y >= 0.166 && y < 0.234 && x >= -0.214 && x < -0.115 ? hawaii
+        : y >= .0204 && y < 0.234 && x >= 0.320 && x < 0.380 ? puertoRico            
         : lower48).invert(coordinates);
   };
 
   albersUsa.stream = function(stream) {
-    return cache && cacheStream === stream ? cache : cache = multiplex([lower48.stream(cacheStream = stream), alaska.stream(stream), hawaii.stream(stream)]);
+    return cache && cacheStream === stream ? cache : cache = multiplex([lower48.stream(cacheStream = stream), alaska.stream(stream), hawaii.stream(stream), puertoRico.stream(stream)]);
   };
 
   albersUsa.precision = function(_) {
     if (!arguments.length) return lower48.precision();
-    lower48.precision(_), alaska.precision(_), hawaii.precision(_);
+    lower48.precision(_), alaska.precision(_), hawaii.precision(_), puertoRico.precision(_);
     return reset();
   };
 
   albersUsa.scale = function(_) {
     if (!arguments.length) return lower48.scale();
-    lower48.scale(_), alaska.scale(_ * 0.35), hawaii.scale(_);
+    lower48.scale(_), alaska.scale(_ * 0.35), hawaii.scale(_), puertoRico.scale(_);
     return albersUsa.translate(lower48.translate());
   };
 
@@ -83,6 +86,11 @@ export default function() {
         .translate([x - 0.205 * k, y + 0.212 * k])
         .clipExtent([[x - 0.214 * k + epsilon, y + 0.166 * k + epsilon], [x - 0.115 * k - epsilon, y + 0.234 * k - epsilon]])
         .stream(pointStream);
+
+    puertoRicoPoint = puertoRico
+        .translate([x + .350 * k, y + .224 * k])
+        .clipExtent([[x + .320 * k, y + .204 * k], [x + .380 * k, y + .234 * k]])
+        .stream(pointStream);       
 
     return reset();
   };
@@ -110,6 +118,8 @@ export default function() {
     var alaska2 = lower48([-112.8, 27.6]);
     var alaska3 = lower48([-114.3, 30.6]);
     var alaska4 = lower48([-119.3, 30.1]);
+    
+   
 
     context.moveTo(hawaii1[0], hawaii1[1]);
     context.lineTo(hawaii2[0], hawaii2[1]);
